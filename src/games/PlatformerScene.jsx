@@ -19,6 +19,16 @@ class MainScene extends Phaser.Scene {
     }
 
     create() {
+        // Prevent arrow keys and space from scrolling the page
+        this.input.keyboard.addCapture([
+            Phaser.Input.Keyboard.KeyCodes.UP,
+            Phaser.Input.Keyboard.KeyCodes.DOWN,
+            Phaser.Input.Keyboard.KeyCodes.LEFT,
+            Phaser.Input.Keyboard.KeyCodes.RIGHT,
+            Phaser.Input.Keyboard.KeyCodes.SPACE
+        ]);
+
+        // 1. Setup Game State
         const upgrades = this.data.get('upgrades') || {};
         this.score = 0;
         this.syncRate = 100;
@@ -235,3 +245,4 @@ class MainScene extends Phaser.Scene {
 }
 
 export default MainScene;
+
