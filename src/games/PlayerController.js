@@ -35,7 +35,6 @@ export class PlayerController {
         this.sprite.setCollideWorldBounds(true);
         this.sprite.setDisplaySize(32, 32);
 
-        // Add a trailing effect for the dash (Visual Polish)
         this.dashParticles = this.scene.add.particles(0, 0, 'player', {
             speed: { min: -100, max: 100 },
             scale: { start: 0.5, end: 0 },
@@ -54,11 +53,10 @@ export class PlayerController {
         const dashKey = wasd.shift?.isDown || cursors.shift?.isDown;
 
         if (this.state === this.STATES.DASHING) {
-            if (jumpUp) this.cancelDash(); // Allow jumping out of a dash
+            if (jumpUp) this.cancelDash();
             return;
         }
 
-        // Wall Jump Logic
         if (jumpUp && !this.sprite.body.touching.down) {
             if (this.sprite.body.touching.left || this.sprite.body.touching.right) {
                 this.executeWallJump();
@@ -66,42 +64,39 @@ export class PlayerController {
             }
         }
 
-        // Dash Logic
         if (dashKey && this.isDashAvailable) {
             this.executeDash(moveLeft, moveRight);
             return;
         }
 
-        // Normal Movement
-            if (moveLeft) {
-                this.sprite.setVelocityX(-this.moveSpeed);
-                this.sprite.setFlipX(true);
-                this.updateState(this.sprite.body.touching.down ? this.STATES.RUNNING : this.STATES.FALLING);
-            } else if (moveRight) {
-                this.sprite.setVelocityX(this.moveSpeed);
-                this.sprite.setFlipX(false);
-                this.updateState(this.sprite.body.touching.down ? this.STATES.RUNNING : this.STATES.FALLING);
-            } else {
-                this.sprite.setVelocityX(0);
-                this.updateState(this.sprite.body.touching.down ? this.STATES.IDLE : this.STATES.FALLING);
-            }
-
-            if (jumpUp && this.sprite.body.touching.down) {
-                this.sprite.setVelocityY(this.jumpForce);
-                this.updateState(this.STATES.JUMPING);
-                this.scene.sound.play('jump');
-            }
+        if (moveLeft) {
+            this.sprite.setVelocityX(-this.moveSpeed);
+            this.sprite.setFlipX(true);
+            this.updateState(this.sprite.body.touching.down ? this.STATES.RUNNING : this.STATES.FALLING);
+        } else if (moveRight) {
+            this.sprite.setVelocityX(this.moveSpeed);
+            this.sprite.setFlipX(false);
+            this.updateState(this.sprite.body.touching.down ? this.STATES.RUNNING : this.STATES.FALLING);
+        } else {
+            this.sprite.setVelocityX(0);
+            this.updateState(this.sprite.body.touching.down ? this.STATES.IDLE : this.STATES.FALLING);
         }
+
+        if (jumpUp && this.sprite.body.touching.down) {
+            this.sprite.setVelocityY(this.jumpForce);
+            this.updateState(this.STATES.JUMPING);
+            this.scene.sound.play('jump');
+        }
+    }
+
     executeDash(moveLeft, moveRight) {
         this.updateState(this.STATES.DASHING);
         this.isDashAvailable = false;
 
         const direction = moveLeft ? -1 : (moveRight ? 1 : (this.sprite.flipX ? -1 : 1));
-        
         this.sprite.setVelocityX(direction * this.dashSpeed);
         this.sprite.setVelocityY(0);
 
-        // UX Polish: Start particle trail
         this.dashParticles.start();
         this.scene.sound.play('dash');
         this.scene.time.delayedCall(this.dashDuration, () => {
@@ -129,9 +124,6 @@ export class PlayerController {
     updateState(newState) {
         if (this.state !== newState) {
             this.state = newState;
-            // This is where we would trigger animation changes
-            // this.sprite.play(newState.toLowerCase());
         }
     }
 }
-
