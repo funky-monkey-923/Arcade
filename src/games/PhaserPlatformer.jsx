@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import Phaser from 'phaser';
 import MainScene from './PlatformerScene';
 
-const PhaserGame = () => {
+const PlatformerGame = ({ upgrades, onComplete }) => {
     const gameContainerRef = useRef(null);
 
     useEffect(() => {
@@ -21,7 +21,15 @@ const PhaserGame = () => {
             scene: [MainScene]
         };
 
+        // Pass upgrades to the scene
         const game = new Phaser.Game(config);
+
+        // We use the scene data system to pass React props into Phaser
+        const scene = game.scene.scenes[0];
+        if (scene) {
+            scene.setData('upgrades', upgrades);
+            scene.setData('onComplete', onComplete);
+        }
 
         return () => {
             game.destroy(true);
@@ -56,4 +64,5 @@ const PhaserGame = () => {
     );
 };
 
-export default PhaserGame;
+export default PlatformerGame;
+

@@ -26,10 +26,15 @@ class MainScene extends Phaser.Scene {
     }
     create() {
         // 1. Setup Game State
+        const upgrades = this.data.get('upgrades') || {};
         this.score = 0;
         this.syncRate = 100;
         this.requiredCores = 5;
         this.isLevelComplete = false;
+
+        // Apply Upgrades from the Black Market
+        const dashBonus = (upgrades['dash_dist'] || 0) * 50;
+        const jumpBonus = (upgrades['jump_boost'] || 0) * 20;
 
         // 2. Setup UI
         this.uiText = this.add.text(16, 16, '', {
@@ -37,18 +42,13 @@ class MainScene extends Phaser.Scene {
             fill: '#00ffcc', 
             fontFamily: 'Courier New' 
         });
-
-        // UX Specialist Addition: Vignette for low sync
         this.vignette = this.add.graphics();
         this.updateUI();
 
         // 3. Setup Platforms
         this.platforms = this.physics.add.staticGroup();
-        
-        // Floor - Using the industrial platform image
         const floor = this.platforms.create(400, 580, 'platform');
         floor.setScale(8, 1).refreshBody();
-        // Floating Platforms
         this.platforms.create(200, 450, 'platform');
         this.platforms.create(500, 350, 'platform');
         this.platforms.create(300, 250, 'platform');
@@ -61,6 +61,8 @@ class MainScene extends Phaser.Scene {
 
         // 4. Initialize Player Controller (The Engineering Upgrade)
         this.playerController = new PlayerController(this);
+        this.playerController.dashSpeed = 600 + dashBonus;
+        this.playerController.jumpForce = -450 - jumpBonus;
 
         // 5. Setup Data Cores (Coins)
         this.coins = this.physics.add.group({
@@ -83,12 +85,12 @@ class MainScene extends Phaser.Scene {
         this.drones = this.physics.add.group();
         this.createDrone(400, 350, 100);
         this.createDrone(200, 200, 150);
+
         // 8. Physics Interactions
         this.physics.add.collider(this.playerController.sprite, this.platforms);
         this.physics.add.collider(this.playerController.sprite, this.unstablePlatforms);
         this.physics.add.collider(this.coins, this.platforms);
         this.physics.add.collider(this.coins, this.unstablePlatforms);
-
         this.physics.add.overlap(this.playerController.sprite, this.coins, this.collectCoin, null, this);
         this.physics.add.overlap(this.playerController.sprite, this.portal, this.reachPortal, null, this);
         this.physics.add.overlap(this.playerController.sprite, this.drones, this.hitDrone, null, this);
@@ -104,6 +106,7 @@ class MainScene extends Phaser.Scene {
         });
 
         // 10. Sync Rate Decay Timer
+        const decayRate = 1 - ((upgrades['sync_cap'] || 0) * 0.1); // 10% slower per level
         this.time.addEvent({
             delay: 1000,
             callback: this.decaySync,
@@ -180,12 +183,15 @@ class MainScene extends Phaser.Scene {
     }
 
     decaySync() {
-        this.syncRate -= 1;
+        // Use the calculated decay rate
+        const upgrades = this.data.get('upgrades') || {};
+        const decayAmount = 1 - ((upgrades['sync_cap'] || 0) * 0.1);
+        this.syncRate -= decayAmount;
         if (this.syncRate < 0) this.syncRate = 0;
     }
 
     updateUI() {
-        this.uiText.setText(`Cores: ${this.score}/${this.requiredCores} | Sync Rate: ${this.syncRate}%`);
+        this.uiText.setText(`Cores: ${this.score}/${this.requiredCores} | Sync Rate: ${Math.floor(this.syncRate)}%`);
 
         // UX Specialist: Vignette logic
         this.vignette.clear();
@@ -233,6 +239,12 @@ class MainScene extends Phaser.Scene {
             align: 'center',
             fontFamily: 'Courier New'
         }).setOrigin(0.5);
+
+            // Call the React callback to return to lobby with rewards
+            const onComplete = this.data.get('onComplete');
+            if (onComplete) {
+                onComplete(this.score * 10); // Reward: 10 credits per core
+            }
 
         this.time.delayedCall(3000, () => this.scene.restart());
     }
